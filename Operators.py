@@ -139,4 +139,26 @@ def withdraw_money():
             print("remaining balance",balance)
     else :
         print("wrong pin")
-withdraw_money()
+withdraw_money() 
+
+
+# loops 
+name = "virat kohli"
+for ch in name:
+    print(ch)
+
+# whle loop 
+count = 1
+while count <=5 :
+    print(count)
+    count += 1
+
+password = ""
+while password !="1234":
+    password = input("enter password:")
+    print("login success")
+
+student = ["ram","alex","rana"]
+student.append("sam")
+student.remove("alex")
+print(student)
