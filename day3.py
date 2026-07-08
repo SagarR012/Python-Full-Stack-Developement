@@ -22,3 +22,29 @@ print(x)
 data = {1,2,3}
 data.add(4)
 print(data)
+
+# union 
+a = {1,2,3}
+b = {3,4,5}
+print(a|b)
+
+# intersection 
+a = {1,2,3}
+b = {3,4,5}
+print(a&b)
+
+# functions 
+def add():
+    return 10 + 20
+result = add()
+print(result)
+
+def sub():
+    return 10 - 20
+result = sub()
+print(result)
+
+def mul():
+    return 10 * 20
+result = mul()
+print(result)
