@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend Page</title>
+    <link rel="stylesheet" href="sheet.css">
+    <script src="main.js"></script>
+</head>
+
+<body>
+
+<h1>Hello, World!</h1>
+<p>learning website</p>
+
+<h2>Card</h2>
+
+<p>A <strong>card</strong> uses all the 4 box model</p>
+<p><strong>Width</strong></p>
+<p><strong>Padding</strong></p>
+<p><strong>Border</strong></p>
+<p><strong>Margin</strong></p>
+
+<div class="card">
+    I am a card
+</div>
+
+<div class="card">
+    I am another card
+</div>
+
+
+<h2>FlexBox</h2>
+
+<div class="flex">
+    <div class="box">A</div>
+    <div class="box">B</div>
+    <div class="box">C</div>
+</div>
+
+
+<h2>Grid</h2>
+
+<div class="grid">
+    <div class="box">BOX</div>
+    <div class="box">BOX</div>
+    <div class="box">BOX</div>
+    <div class="box">BOX</div>
+    <div class="box">BOX</div>
+    <div class="box">BOX</div>
+</div>
+
+
+<h2>Responsive Design</h2>
+
+<div class="screen-label" id="label">
+</div>
+
+
+<script>
+function checkscreen(){
+    let label=document.getElementById("label");
+
+    if(window.innerWidth <= 600){
+        label.innerText="You are on small screen";
+    }
+    else{
+        label.innerText="You are on big screen";
+    }
+}
+
+window.addEventListener("resize",checkscreen);
+checkscreen();
+
+</script>
+#################################
+
+</body>
+</html>
+
+<h2>dom</h2>
+<p id="text">Original Text</p>
+<button onclick="changeText()">change text</button>
+<h1 id="title">Hello</h1>
+
+<h2>2. Events</h2>
+  <button id="myBtn">Click Me</button>
+  <p id="msg"></p>
+
+  <script>
+    document.getElementById("myBtn").addEventListener("click", function() {
+      document.getElementById("msg").innerText = "Button Clicked!";
+    });
+  </script>     index.html
