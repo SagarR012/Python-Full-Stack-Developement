@@ -1,0 +1,14 @@
+{ % extend 'base.html %'}
+{ % block title % }
+    {% if ogject %}Edit Book{% else %}Add Book{% endif %}
+{% endblock %}
+{% block content %}
+    <h1> {% if object }Edit "{boject.title}" {% else %} Add a new book{% end if %}</h1>
+    {# enctype isd required when from has file upload(cover image)#}
+    <form method = "POST" enctype = "multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p}}
+        <button class ="btn" type="submit">Save Book</button>
+        <a href = "{% url 'book_list' %}" style ="margin-left:10px;">cancle</a>
+    </form>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html %}
+{% block title %}{{ book.title}}{% endblock %}
+{% block content %}
+    <a href="{% url 'book_list' %}">Back</a>
+    <br><br>
+    {% if book.cover %}
+        <img src="{{book.cover.url}}" alt="{{book.title}}" style="width: 200px; margin-bottom:15px">
+    {% endif %}
+    <h1>{{ book.title }}</h1>
+    <p><strong>Author:</strong>{{ book.author }}</p>
+    <p><strong>Added by </strong>{{ book.added_by.username}}</p>
+    {% if block.description %}
+        <p>{{ book.description}}</p>
+    {% endif %}
+    {%if avg %}
+        <p>Average Rating:<strong>{{ avg|floatformate:1}} / 5</strong></p>
+        {% endif %}
+        <hr style="margin: 20px 0;">
+        <h2>Review ({{review|length}})</h2>\
+        {% if user.is_authenticated %}
+            <a class="btn" href="{% url 'add_review book.pk %'}">Wrietee a review</a>
+            <br><br>
+        {% endif %}
+        {% for review in reviews %}
+        <div class="review">
+            <p><strong>{{ review.user.username}}</strong>{{ review.rating}}</p>
+            <p>{{ review.comment}}</p>
+            <p style="font-size: 12px; color:#999;">{{ review.created_at|data:"d M Y"}}</p>
+        </div>
+    {% empty %}
+        <p> No review yet.</p>
+    {% endfor %}
+{% endblock %}
