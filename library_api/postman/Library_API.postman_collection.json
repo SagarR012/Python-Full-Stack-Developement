@@ -1,0 +1,613 @@
+{
+  "info": {
+    "name": "Library Management API",
+    "_postman_id": "library-api-collection-v1",
+    "description": "Complete Postman collection for the Library Management API teaching project.\n\n## Setup\n1. Create a Postman Environment with variables:\n   - `base_url`: http://localhost:8000\n   - `access_token`: (auto-filled by Login request)\n   - `refresh_token`: (auto-filled by Login request)\n\n2. Run the **Register** and **Login** requests first.\n3. The Login request auto-saves tokens to environment variables.\n4. All subsequent authenticated requests use `{{access_token}}` automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000", "type": "string" },
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "refresh_token", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "User registration, login (JWT token acquisition), token refresh, and logout.",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/v1/auth/register/", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "register", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testmember\",\n  \"email\": \"testmember@example.com\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"Member\",\n  \"password\": \"SecurePass123!\",\n  \"password_confirm\": \"SecurePass123!\",\n  \"role\": \"member\"\n}"
+            },
+            "description": "Register a new library member account. No authentication required."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 Created', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has user object', function() {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('user');",
+                  "    pm.expect(json.user).to.have.property('id');",
+                  "    pm.expect(json.user).to.have.property('username');",
+                  "    pm.expect(json.message).to.eql('User registered successfully.');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (Get Tokens)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/v1/auth/login/", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "login", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testmember\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "description": "Login with credentials to receive JWT access and refresh tokens.\n\nThe test script automatically saves tokens to environment variables:\n- `access_token` — used in Authorization header for all authenticated requests\n- `refresh_token` — used to get new access tokens when they expire"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains access and refresh tokens', function() {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('access');",
+                  "    pm.expect(json).to.have.property('refresh');",
+                  "});",
+                  "",
+                  "// Auto-save tokens to environment variables",
+                  "const json = pm.response.json();",
+                  "if (json.access) {",
+                  "    pm.environment.set('access_token', json.access);",
+                  "    pm.environment.set('refresh_token', json.refresh);",
+                  "    console.log('Tokens saved to environment variables.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/v1/auth/refresh/", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "refresh", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "description": "Use the refresh token to obtain a new access token.\n\nAccess tokens expire after 15 minutes (configured in SIMPLE_JWT settings).\nWhen you get a 401 error, use this endpoint to refresh.\n\nWith ROTATE_REFRESH_TOKENS=True, a new refresh token is also returned."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Save the new tokens",
+                  "const json = pm.response.json();",
+                  "if (json.access) {",
+                  "    pm.environment.set('access_token', json.access);",
+                  "    console.log('Access token refreshed.');",
+                  "}",
+                  "if (json.refresh) {",
+                  "    pm.environment.set('refresh_token', json.refresh);",
+                  "    console.log('Refresh token rotated.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout (Blacklist Token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/v1/auth/logout/", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "logout", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "description": "Logout by blacklisting the refresh token.\n\nAfter this, the refresh token cannot be used to get new access tokens.\nThe current access token remains valid until it expires (15 min)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Clear saved tokens after logout",
+                  "pm.environment.set('access_token', '');",
+                  "pm.environment.set('refresh_token', '');",
+                  "console.log('Tokens cleared from environment.');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/auth/profile/", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "profile", ""] },
+            "description": "Get the current user's profile. Requires authentication."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Profile has required fields', function() {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('username');",
+                  "    pm.expect(json).to.have.property('email');",
+                  "    pm.expect(json).to.have.property('role');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/v1/auth/change-password/", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "change-password", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"old_password\": \"SecurePass123!\",\n  \"new_password\": \"NewSecurePass456!\",\n  \"new_password_confirm\": \"NewSecurePass456!\"\n}"
+            },
+            "description": "Change the current user's password. Requires old password verification."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Books",
+      "description": "Book catalog operations. List and retrieve are public; create/update/delete require librarian or admin role.",
+      "item": [
+        {
+          "name": "List Books",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/books/?page=1&page_size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "books", ""],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "10" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "category", "value": "", "disabled": true },
+                { "key": "author", "value": "", "disabled": true },
+                { "key": "available", "value": "true", "disabled": true },
+                { "key": "ordering", "value": "-created_at", "disabled": true },
+                { "key": "published_after", "value": "2020-01-01", "disabled": true }
+              ]
+            },
+            "description": "List all books with pagination. Public endpoint — no authentication required.\n\nAvailable query parameters:\n- `search`: Search in title, author name, ISBN\n- `category`: Filter by category ID\n- `author`: Filter by author ID\n- `available`: true/false — filter by availability\n- `ordering`: Field to sort by. Prefix with `-` for descending\n- `published_after` / `published_before`: Date range filter"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response is paginated', function() {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('count');",
+                  "    pm.expect(json).to.have.property('results');",
+                  "    pm.expect(json.results).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Book Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/v1/books/1/", "host": ["{{base_url}}"], "path": ["api", "v1", "books", "1", ""] },
+            "description": "Get detailed information for a specific book by ID."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK or 404 if not found', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Book has required fields', function() {",
+                  "        const json = pm.response.json();",
+                  "        pm.expect(json).to.have.property('title');",
+                  "        pm.expect(json).to.have.property('author');",
+                  "        pm.expect(json).to.have.property('is_available');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Book (Auth Required)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/v1/books/", "host": ["{{base_url}}"], "path": ["api", "v1", "books", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Pragmatic Programmer\",\n  \"author\": 1,\n  \"category\": 1,\n  \"isbn\": \"9780135957059\",\n  \"description\": \"A classic guide for developers on software craftsmanship.\",\n  \"published_date\": \"2019-09-13\",\n  \"available_copies\": 3,\n  \"total_copies\": 3\n}"
+            },
+            "description": "Create a new book. Requires librarian or admin role.\n\nNote: `author` and `category` are IDs, not nested objects."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 Created or 403 if not authorized', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 403]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Book",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/v1/books/1/", "host": ["{{base_url}}"], "path": ["api", "v1", "books", "1", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description for this book.\",\n  \"available_copies\": 5,\n  \"total_copies\": 5\n}"
+            },
+            "description": "Partially update a book. Requires librarian or admin role.\n\nUse PATCH for partial updates (only include fields you want to change).\nUse PUT for full replacement (all fields required)."
+          }
+        },
+        {
+          "name": "Delete Book",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/books/1/", "host": ["{{base_url}}"], "path": ["api", "v1", "books", "1", ""] },
+            "description": "Delete a book. Requires librarian or admin role."
+          }
+        },
+        {
+          "name": "Check Book Availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/v1/books/1/availability/", "host": ["{{base_url}}"], "path": ["api", "v1", "books", "1", "availability", ""] },
+            "description": "Check availability status for a specific book.\n\nThis is a custom action on the BookViewSet.\nReturns: is_available, available_copies, total_copies, borrowed_copies."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Availability response has required fields', function() {",
+                  "        const json = pm.response.json();",
+                  "        pm.expect(json).to.have.property('is_available');",
+                  "        pm.expect(json).to.have.property('available_copies');",
+                  "        pm.expect(json).to.have.property('total_copies');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Authors & Categories",
+      "description": "CRUD operations for Authors and Categories.",
+      "item": [
+        {
+          "name": "List Authors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/v1/authors/", "host": ["{{base_url}}"], "path": ["api", "v1", "authors", ""] },
+            "description": "List all authors. Public endpoint."
+          }
+        },
+        {
+          "name": "Create Author",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/v1/authors/", "host": ["{{base_url}}"], "path": ["api", "v1", "authors", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Andrew Hunt\",\n  \"bio\": \"Co-author of The Pragmatic Programmer.\",\n  \"birth_date\": \"1964-01-01\"\n}"
+            },
+            "description": "Create a new author. Requires librarian or admin role."
+          }
+        },
+        {
+          "name": "Get Author Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/v1/authors/1/", "host": ["{{base_url}}"], "path": ["api", "v1", "authors", "1", ""] }
+          }
+        },
+        {
+          "name": "Update Author",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/v1/authors/1/", "host": ["{{base_url}}"], "path": ["api", "v1", "authors", "1", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bio\": \"Updated author biography.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Author",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/authors/1/", "host": ["{{base_url}}"], "path": ["api", "v1", "authors", "1", ""] }
+          }
+        },
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/v1/categories/", "host": ["{{base_url}}"], "path": ["api", "v1", "categories", ""] }
+          }
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/v1/categories/", "host": ["{{base_url}}"], "path": ["api", "v1", "categories", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Technology\"\n}"
+            },
+            "description": "The slug is auto-generated from the name."
+          }
+        },
+        {
+          "name": "Get Category Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/v1/categories/1/", "host": ["{{base_url}}"], "path": ["api", "v1", "categories", "1", ""] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Loans",
+      "description": "Book loan management. Members can borrow/return books. Staff sees all loans.",
+      "item": [
+        {
+          "name": "Borrow a Book (Create Loan)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/v1/loans/", "host": ["{{base_url}}"], "path": ["api", "v1", "loans", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book\": 1,\n  \"notes\": \"Borrowing for a book club.\"\n}"
+            },
+            "description": "Borrow a book. Requires authentication.\n\nThe API automatically:\n- Sets the borrower to the current user\n- Calculates due_date as today + 14 days\n- Decrements the book's available_copies\n- Prevents borrowing if no copies are available\n- Prevents borrowing the same book twice"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 or 400 (no copies available)', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 400]);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    // Save loan ID for return test",
+                  "    pm.environment.set('loan_id', json.id);",
+                  "    console.log('Loan created with ID:', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "My Loans",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/loans/my-loans/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "loans", "my-loans", ""],
+              "query": [
+                { "key": "status", "value": "active", "disabled": true }
+              ]
+            },
+            "description": "List the current user's loans.\n\nThis custom action always returns only the current user's loans,\neven if they are staff (unlike the main list endpoint).\n\nOptional query param: `?status=active|returned|overdue`"
+          }
+        },
+        {
+          "name": "Return a Book",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/v1/loans/{{loan_id}}/return/", "host": ["{{base_url}}"], "path": ["api", "v1", "loans", "{{loan_id}}", "return", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Returned in good condition.\"\n}"
+            },
+            "description": "Return a borrowed book. Requires authentication.\n\nThe API automatically:\n- Sets return_date to now\n- Changes status to 'returned'\n- Increments the book's available_copies\n\nOnly the borrower (or staff) can process a return."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK or 400 already returned', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Loan status is returned', function() {",
+                  "        const json = pm.response.json();",
+                  "        pm.expect(json.status).to.eql('returned');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "All Loans (Staff/Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/loans/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "loans", ""],
+              "query": [
+                { "key": "ordering", "value": "-loan_date", "disabled": true }
+              ]
+            },
+            "description": "List all loans (returns only the current user's loans for non-staff users).\n\nFor staff/admin: returns ALL loans in the system.\nFor regular members: returns only their own loans."
+          }
+        },
+        {
+          "name": "Get Loan Detail",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/loans/{{loan_id}}/", "host": ["{{base_url}}"], "path": ["api", "v1", "loans", "{{loan_id}}", ""] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "API Documentation",
+      "description": "Endpoints for exploring the API documentation.",
+      "item": [
+        {
+          "name": "Swagger UI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/docs/", "host": ["{{base_url}}"], "path": ["api", "docs", ""] },
+            "description": "Open Swagger UI — interactive API documentation in the browser."
+          }
+        },
+        {
+          "name": "ReDoc",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/redoc/", "host": ["{{base_url}}"], "path": ["api", "redoc", ""] },
+            "description": "Open ReDoc — alternative clean API documentation."
+          }
+        },
+        {
+          "name": "Raw OpenAPI Schema",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/schema/", "host": ["{{base_url}}"], "path": ["api", "schema", ""] },
+            "description": "Download the raw OpenAPI 3.0 schema in YAML format.\nUseful for importing into Postman or other API tools."
+          }
+        }
+      ]
+    }
+  ]
+}
+

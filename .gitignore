@@ -1,0 +1,36 @@
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Node dependencies
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Local environment variables
+.env
+.env.local
+.env.*.local
+
+# Database
+*.sqlite3
+db.sqlite3
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE configurations
+.vscode/
+.idea/
+.project
+.pydevproject
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
